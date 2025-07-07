@@ -28,7 +28,7 @@ class Game {
         
         // Game settings
         this.targetVictoryPoints = 10;
-        this.maxPlayers = 4;
+        this.maxPlayers = 6;
         
         this.id = 'game_main';
     }

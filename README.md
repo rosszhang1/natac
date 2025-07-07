@@ -19,17 +19,22 @@ http://localhost:3000/natac-3d.html
 
 ### ✅ Complete Catan Implementation
 - **19-hex board** with proper terrain distribution
+- **2-6 player support** - accommodates small groups to large parties
+- **Smart number placement** - red numbers (6,8) never adjacent for balanced gameplay
 - **Standard game rules** - setup phase, dice rolling, resource production
 - **Interactive piece placement** - settlements, cities, roads
 - **Robber mechanics** - blocks production, enables stealing
 - **Victory conditions** - first to 10 victory points wins
 
 ### 🎨 Immersive 3D Experience
-- **High-performance Three.js renderer** with optimized geometries
+- **Cinematic PBR rendering** with HDR lighting and tone mapping
+- **Living terrain ecosystems** - forests with lumber, farms with wheat, mines with ore
+- **Settlement-worthy landscapes** - players see valuable regions they want to colonize
+- **Dirt road network** connecting hexes with clear territorial boundaries
+- **Professional materials** - realistic textures, normal maps, environmental reflections
+- **Multi-light setup** - golden hour key light, blue rim light, atmospheric ambiance
 - **Interactive board** - click to place pieces, move robber
-- **Real-time game state** - player stats, turn management, event log
-- **Smooth camera controls** - orbit, zoom, pan with mouse
-- **Professional UI** - game HUD, dice rolling, performance stats
+- **Smooth camera controls** - birds-eye view with unlimited rotation
 
 ### 🏗️ Object-Oriented Architecture
 - **Clean separation** between game logic and rendering
@@ -91,12 +96,15 @@ natac/
 - **Relationship mapping** between hexes, vertices, and edges
 - **Distance calculations** and neighbor detection
 
-### **3D Rendering Pipeline**
-- **Shared geometries** - One hex geometry for all 19 hexes
-- **Material instancing** - Efficient player color system
-- **Smart updates** - Only re-render when game state changes
-- **Click detection** - Raycasting for interactive piece placement
-- **Performance optimization** - 60fps target with minimal draw calls
+### **Advanced 3D Rendering Pipeline**
+- **PBR Materials** - Physically Based Rendering with roughness, metalness, normal maps
+- **HDR Environment** - Image-based lighting with custom sky gradients
+- **Multi-layer lighting** - Key, rim, fill, and atmospheric point lights
+- **Procedural textures** - High-quality terrain surfaces with normal detail
+- **Immersive ecosystems** - Each terrain type tells a visual story
+- **Road network rendering** - Connecting paths between all hex territories
+- **Optimized performance** - Shared geometries, efficient material system
+- **Advanced shadows** - 4K shadow maps with soft PCF filtering
 
 ### **Modular Design**
 - **Game logic** completely separate from rendering
@@ -161,13 +169,13 @@ gameRenderer.renderCustomPiece(lighthouse);
 
 ## 📋 Game Rules Reference
 
-### **Resource Production**
-- **Forest** → Lumber
-- **Hills** → Brick  
-- **Mountains** → Ore
-- **Fields** → Grain
-- **Pasture** → Wool
-- **Desert** → No resources
+### **Resource Production & Terrain Details**
+- **🌲 Forest** → Lumber (majestic trees, fallen logs, dense undergrowth)
+- **🧱 Hills** → Brick (smoking kilns, clay deposits, pottery workshops)
+- **⛰️ Mountains** → Ore (exposed veins, mine shafts, mining equipment)
+- **🌾 Fields** → Grain (wheat rows, farmhouses, windmills, barns)
+- **🐑 Pasture** → Wool (grazing sheep, shepherd huts, hay bales, fencing)
+- **🏜️ Desert** → No resources (cacti, rock formations, rare oasis)
 
 ### **Building Costs**
 - **Road** - 1 Lumber + 1 Brick

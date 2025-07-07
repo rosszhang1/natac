@@ -70,8 +70,9 @@ class Hex {
      * Convert axial coordinates to pixel coordinates for rendering
      */
     toPixelCoordinates(size = 1) {
-        const x = size * (3/2 * this.q);
-        const z = size * (Math.sqrt(3)/2 * this.q + Math.sqrt(3) * this.r);
+        // For flat-topped hexes (Catan style)
+        const x = size * Math.sqrt(3) * (this.q + this.r/2);
+        const z = size * 3/2 * this.r;
         return { x, z };
     }
     

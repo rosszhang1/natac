@@ -26,7 +26,7 @@
             <h2>🎲 Game Setup</h2>
             <div class="game-controls">
                 <button onclick="createGame()">Create New Game</button>
-                <button onclick="addTestPlayers()">Add 4 Players</button>
+                <button onclick="addTestPlayers()">Add 6 Players</button>
                 <button onclick="startGame()">Start Game</button>
             </div>
             <div id="setup-output" class="debug-output"></div>
@@ -113,7 +113,9 @@
                     game.addPlayer('red', 'Alice'),
                     game.addPlayer('blue', 'Bob'), 
                     game.addPlayer('orange', 'Charlie'),
-                    game.addPlayer('white', 'Diana')
+                    game.addPlayer('white', 'Diana'),
+                    game.addPlayer('green', 'Eve'),
+                    game.addPlayer('purple', 'Frank')
                 ];
                 
                 let result = '👥 Players added:\n\n';

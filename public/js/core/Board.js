@@ -230,16 +230,66 @@ class Board {
         // Create standard set of number tokens
         this.numberTokens = NumberToken.createStandardSet();
         
-        // Shuffle tokens
-        const shuffledTokens = this.shuffleArray([...this.numberTokens]);
+        // Get non-desert hexes
+        const resourceHexes = Array.from(this.hexes.values()).filter(hex => hex.terrain !== 'desert');
         
-        // Place on non-desert hexes
-        let tokenIndex = 0;
-        for (let hex of this.hexes.values()) {
-            if (hex.terrain !== 'desert' && tokenIndex < shuffledTokens.length) {
-                shuffledTokens[tokenIndex].placeOnHex(hex);
-                tokenIndex++;
+        // Separate red (6,8) and non-red tokens
+        const redTokens = this.numberTokens.filter(token => token.isHighProbability());
+        const nonRedTokens = this.numberTokens.filter(token => !token.isHighProbability());
+        
+        // Shuffle both groups
+        const shuffledRedTokens = this.shuffleArray([...redTokens]);
+        const shuffledNonRedTokens = this.shuffleArray([...nonRedTokens]);
+        
+        // Place red tokens first with adjacency constraint
+        this.placeRedTokensWithConstraint(shuffledRedTokens, resourceHexes);
+        
+        // Place remaining non-red tokens
+        this.placeRemainingTokens(shuffledNonRedTokens, resourceHexes);
+    }
+    
+    /**
+     * Place red tokens (6,8) ensuring no two are adjacent
+     */
+    placeRedTokensWithConstraint(redTokens, hexes) {
+        const availableHexes = [...hexes];
+        
+        for (let token of redTokens) {
+            // Find hexes where we can place this red token without being adjacent to another red token
+            const validHexes = availableHexes.filter(hex => {
+                return !hex.neighbors.some(neighbor => 
+                    neighbor.numberToken && neighbor.numberToken.isHighProbability()
+                );
+            });
+            
+            if (validHexes.length > 0) {
+                // Place on a random valid hex
+                const randomIndex = Math.floor(Math.random() * validHexes.length);
+                const selectedHex = validHexes[randomIndex];
+                token.placeOnHex(selectedHex);
+                
+                // Remove this hex from available hexes
+                const hexIndex = availableHexes.indexOf(selectedHex);
+                availableHexes.splice(hexIndex, 1);
+            } else {
+                // Fallback: place on any available hex (constraint couldn't be satisfied)
+                console.warn('Could not satisfy red token adjacency constraint');
+                if (availableHexes.length > 0) {
+                    token.placeOnHex(availableHexes.pop());
+                }
             }
+        }
+    }
+    
+    /**
+     * Place remaining non-red tokens on available hexes
+     */
+    placeRemainingTokens(tokens, hexes) {
+        const availableHexes = hexes.filter(hex => !hex.numberToken);
+        const shuffledAvailable = this.shuffleArray([...availableHexes]);
+        
+        for (let i = 0; i < tokens.length && i < shuffledAvailable.length; i++) {
+            tokens[i].placeOnHex(shuffledAvailable[i]);
         }
     }
     
