@@ -1,0 +1,16 @@
+{
+  "name": "natac",
+  "version": "1.0.0",
+  "description": "Online Catan replica for multiplayer gaming",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "socket.io": "^4.7.0"
+  },
+  "keywords": ["catan", "board-game", "multiplayer"],
+  "author": "",
+  "license": "MIT"
+}
