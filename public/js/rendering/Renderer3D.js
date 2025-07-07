@@ -169,8 +169,10 @@ class Renderer3D {
      * Create shared geometries for efficiency
      */
     createGeometries() {
-        // Hex tile geometry
+        // Hex tile geometry (lying flat in XZ plane)
         const hexGeometry = new THREE.CylinderGeometry(2, 2, 0.5, 6);
+        // Rotate to lay flat on XZ plane instead of standing up on Y axis
+        hexGeometry.rotateX(Math.PI / 2);
         this.geometries.set('hex', hexGeometry);
         
         // Settlement geometry (house shape)
@@ -278,7 +280,7 @@ class Renderer3D {
         const pos = hex.toPixelCoordinates(2); // Scale for visibility
         
         mesh.position.set(pos.x, 0, pos.z);
-        mesh.rotation.x = -Math.PI / 2; // Lay flat
+        // Geometry is already rotated to lay flat
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         
