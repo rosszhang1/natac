@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hex Coordinate System Explained</title>
+    <style>
+        body { font-family: 'Courier New', monospace; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .hex-grid { display: inline-block; margin: 20px; }
+        .hex-visual { width: 60px; height: 52px; background: #4CAF50; margin: 2px; display: inline-block; text-align: center; line-height: 52px; color: white; font-size: 10px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+        .coordinate-table { width: 100%; border-collapse: collapse; }
+        .coordinate-table th, .coordinate-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .coordinate-table th { background-color: #f2f2f2; }
+        .math-demo { background: #f8f8f8; padding: 15px; border-left: 4px solid #2196F3; margin: 10px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Hex Coordinate System Explained</h1>
+        
+        <div class="section">
+            <h2>📐 Axial Coordinates (q, r)</h2>
+            <p>Hexagonal grids use <strong>axial coordinates</strong> instead of square (x,y) coordinates:</p>
+            <ul>
+                <li><strong>q</strong> = Column coordinate (like x, but skewed)</li>
+                <li><strong>r</strong> = Row coordinate (like y, but skewed)</li>
+                <li><strong>s</strong> = Third coordinate (s = -q - r) for mathematical convenience</li>
+            </ul>
+            
+            <div class="math-demo">
+                <strong>Why 3 coordinates for 2D?</strong><br>
+                Hex grids have natural symmetry in 3 directions. The constraint s = -q - r keeps us on the 2D plane while making neighbor calculations easier.
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🎯 Coordinate Examples</h2>
+            <canvas id="hexCanvas" width="500" height="400"></canvas>
+            <table class="coordinate-table">
+                <thead>
+                    <tr>
+                        <th>Hex</th>
+                        <th>Axial (q, r)</th>
+                        <th>Cube (q, r, s)</th>
+                        <th>3D Position (x, z)</th>
+                        <th>Distance from Center</th>
+                    </tr>
+                </thead>
+                <tbody id="coordinate-table-body">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>🧮 Math Behind Position Conversion</h2>
+            <div class="math-demo">
+                <strong>Axial → 3D World Position:</strong><br>
+                x = size × (3/2 × q)<br>
+                z = size × (√3/2 × q + √3 × r)<br>
+                y = 0 (ground level)
+            </div>
+            
+            <p><strong>Why these formulas?</strong></p>
+            <ul>
+                <li><strong>3/2 × q</strong>: Hexagons are 1.5 times their radius apart horizontally</li>
+                <li><strong>√3/2 × q</strong>: Each column is offset vertically by this amount</li>
+                <li><strong>√3 × r</strong>: Rows are √3 times the radius apart</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>🎮 3D Rendering (X, Z coordinates)</h2>
+            <p>In 3D graphics, we typically use:</p>
+            <ul>
+                <li><strong>X-axis</strong>: Left ↔ Right</li>
+                <li><strong>Y-axis</strong>: Down ↔ Up (height/elevation)</li>
+                <li><strong>Z-axis</strong>: Back ↔ Forward (depth)</li>
+            </ul>
+            
+            <p>For a board game viewed from above:</p>
+            <ul>
+                <li>Hexes are positioned on the <strong>X-Z plane</strong> (the "ground")</li>
+                <li>Y is used for piece height (settlements, cities floating above hexes)</li>
+                <li>Camera looks down at the X-Z plane</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>🔧 Interactive Test</h2>
+            <button onclick="generateTestHexes()">Generate Test Hex Grid</button>
+            <button onclick="showNeighbors()">Show Hex Neighbors</button>
+            <div id="test-output" style="background: #f8f8f8; padding: 15px; margin: 10px 0; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <script src="js/core/Hex.js"></script>
+    <script>
+        // Test hexes for demonstration
+        let testHexes = [];
+        
+        function generateTestHexes() {
+            // Create a small hex grid
+            testHexes = [
+                new Hex(0, 0, 'center'),      // Center
+                new Hex(1, 0, 'right'),       // Right
+                new Hex(0, 1, 'bottom-right'),// Bottom-right
+                new Hex(-1, 1, 'bottom-left'),// Bottom-left
+                new Hex(-1, 0, 'left'),       // Left
+                new Hex(0, -1, 'top-left'),   // Top-left
+                new Hex(1, -1, 'top-right')   // Top-right
+            ];
+            
+            // Update table
+            const tbody = document.getElementById('coordinate-table-body');
+            tbody.innerHTML = '';
+            
+            testHexes.forEach((hex, index) => {
+                const pos = hex.toPixelCoordinates(50); // Scale by 50 for visibility
+                const distance = hex.distanceTo(testHexes[0]); // Distance from center
+                
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = hex.terrain;
+                row.insertCell(1).textContent = `(${hex.q}, ${hex.r})`;
+                row.insertCell(2).textContent = `(${hex.q}, ${hex.r}, ${hex.s})`;
+                row.insertCell(3).textContent = `(${pos.x.toFixed(1)}, ${pos.z.toFixed(1)})`;
+                row.insertCell(4).textContent = distance;
+            });
+            
+            // Draw on canvas
+            drawHexGrid();
+            
+            const output = document.getElementById('test-output');
+            let result = '🎯 Generated hex grid:\n\n';
+            testHexes.forEach(hex => {
+                const pos = hex.toPixelCoordinates(1);
+                result += `${hex.toString()}\n`;
+                result += `  Axial: (${hex.q}, ${hex.r})\n`;
+                result += `  3D Position: (${pos.x.toFixed(2)}, 0, ${pos.z.toFixed(2)})\n\n`;
+            });
+            output.textContent = result;
+        }
+        
+        function drawHexGrid() {
+            const canvas = document.getElementById('hexCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Center drawing in canvas
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            
+            // Draw each hex
+            testHexes.forEach(hex => {
+                const pos = hex.toPixelCoordinates(40); // Scale for canvas
+                
+                // Draw hexagon
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = i * Math.PI / 3;
+                    const x = pos.x + 30 * Math.cos(angle);
+                    const y = pos.z + 30 * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                
+                // Fill based on distance from center
+                const distance = hex.distanceTo(testHexes[0]);
+                if (distance === 0) {
+                    ctx.fillStyle = '#ff6b6b'; // Center is red
+                } else if (distance === 1) {
+                    ctx.fillStyle = '#4ecdc4'; // Neighbors are teal
+                } else {
+                    ctx.fillStyle = '#95e1d3'; // Others are light green
+                }
+                ctx.fill();
+                
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Add text
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`(${hex.q},${hex.r})`, pos.x, pos.z - 5);
+                ctx.fillText(hex.terrain, pos.x, pos.z + 8);
+            });
+            
+            // Reset transform
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+        
+        function showNeighbors() {
+            if (testHexes.length === 0) {
+                alert('Please generate test hexes first!');
+                return;
+            }
+            
+            const centerHex = testHexes[0]; // (0,0)
+            const output = document.getElementById('test-output');
+            
+            let result = '🔍 Hex Neighbor Analysis:\n\n';
+            result += `Center hex: ${centerHex.toString()}\n\n`;
+            
+            result += 'Direct neighbors (distance = 1):\n';
+            testHexes.forEach(hex => {
+                const distance = hex.distanceTo(centerHex);
+                if (distance === 1) {
+                    const pos = hex.toPixelCoordinates(1);
+                    result += `  ${hex.terrain}: (${hex.q}, ${hex.r}) → 3D: (${pos.x.toFixed(2)}, ${pos.z.toFixed(2)})\n`;
+                }
+            });
+            
+            result += '\n📐 Neighbor coordinate patterns:\n';
+            result += 'From any hex (q,r), neighbors are at:\n';
+            result += '  (q+1, r)   - Right\n';
+            result += '  (q, r+1)   - Bottom-right\n';
+            result += '  (q-1, r+1) - Bottom-left\n';
+            result += '  (q-1, r)   - Left\n';
+            result += '  (q, r-1)   - Top-left\n';
+            result += '  (q+1, r-1) - Top-right\n';
+            
+            output.textContent = result;
+        }
+        
+        // Auto-generate on page load
+        window.addEventListener('load', generateTestHexes);
+    </script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natac - Core Objects Test</title>
+    <style>
+        body { font-family: 'Courier New', monospace; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-section h2 { color: #2c5f2d; border-bottom: 2px solid #2c5f2d; padding-bottom: 10px; }
+        .debug-output { background: #f8f8f8; padding: 15px; border-left: 4px solid #4CAF50; margin: 10px 0; white-space: pre-wrap; }
+        .error { border-left-color: #f44336; background: #fff5f5; }
+        .success { border-left-color: #4CAF50; background: #f0fff0; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #45a049; }
+        .object-inspector { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Natac - Core Objects Test Suite</h1>
+        <p>Testing our clean, object-oriented Catan architecture built from first principles.</p>
+        
+        <div class="test-section">
+            <h2>🔧 Load Core Objects</h2>
+            <button onclick="loadCoreObjects()">Load All Core Objects</button>
+            <div id="load-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🏔️ Test Hex Objects</h2>
+            <button onclick="testHexObjects()">Create Test Hexes</button>
+            <div id="hex-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔢 Test Number Tokens</h2>
+            <button onclick="testNumberTokens()">Create Number Tokens</button>
+            <div id="token-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>👤 Test Players</h2>
+            <button onclick="testPlayers()">Create Test Players</button>
+            <div id="player-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🏠 Test Game Pieces</h2>
+            <button onclick="testGamePieces()">Create & Place Pieces</button>
+            <div id="pieces-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎯 Interactive Object Inspector</h2>
+            <p>Click any button above first, then inspect objects:</p>
+            <button onclick="inspectObjects()">Inspect All Objects</button>
+            <div id="inspector-output" class="object-inspector"></div>
+        </div>
+    </div>
+
+    <!-- Load Core Objects -->
+    <script src="js/core/Hex.js"></script>
+    <script src="js/core/Vertex.js"></script>
+    <script src="js/core/Edge.js"></script>
+    <script src="js/core/NumberToken.js"></script>
+    <script src="js/core/GamePieces.js"></script>
+    <script src="js/core/Player.js"></script>
+
+    <script>
+        // Global test objects for inspection
+        let testObjects = {
+            hexes: [],
+            vertices: [],
+            edges: [],
+            tokens: [],
+            players: [],
+            pieces: []
+        };
+
+        function loadCoreObjects() {
+            const output = document.getElementById('load-output');
+            try {
+                // Test if all classes are loaded
+                const classes = [Hex, Vertex, Edge, NumberToken, GamePiece, Settlement, City, Road, Robber, Player];
+                const results = classes.map(cls => `✅ ${cls.name} class loaded`);
+                
+                output.textContent = results.join('\n') + '\n\n🎉 All core objects loaded successfully!';
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error loading objects: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function testHexObjects() {
+            const output = document.getElementById('hex-output');
+            try {
+                // Create test hexes
+                testObjects.hexes = [
+                    new Hex(0, 0, 'forest'),
+                    new Hex(1, 0, 'hills'),  
+                    new Hex(0, 1, 'mountains'),
+                    new Hex(-1, 1, 'fields'),
+                    new Hex(-1, 0, 'pasture'),
+                    new Hex(0, -1, 'desert')
+                ];
+                
+                let result = '📍 Created test hexes:\n\n';
+                testObjects.hexes.forEach(hex => {
+                    result += `${hex.toString()}\n`;
+                    result += `  Resource: ${hex.getResourceType() || 'none'}\n`;
+                    result += `  Can produce: ${hex.canProduceResources()}\n`;
+                    result += `  Position: ${JSON.stringify(hex.toPixelCoordinates())}\n\n`;
+                });
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function testNumberTokens() {
+            const output = document.getElementById('token-output');
+            try {
+                // Create standard set of number tokens
+                testObjects.tokens = NumberToken.createStandardSet();
+                
+                let result = '🔢 Created number tokens:\n\n';
+                testObjects.tokens.forEach(token => {
+                    result += `${token.toString()}\n`;
+                });
+                
+                // Place some tokens on hexes
+                if (testObjects.hexes.length > 0) {
+                    result += '\n📍 Placing tokens on hexes:\n';
+                    for (let i = 0; i < Math.min(testObjects.tokens.length, testObjects.hexes.length); i++) {
+                        const token = testObjects.tokens[i];
+                        const hex = testObjects.hexes[i];
+                        if (hex.terrain !== 'desert') {
+                            token.placeOnHex(hex);
+                            result += `  ${token.value} placed on ${hex.terrain}\n`;
+                        }
+                    }
+                }
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function testPlayers() {
+            const output = document.getElementById('player-output');
+            try {
+                // Create test players
+                testObjects.players = [
+                    new Player('red', 'Alice'),
+                    new Player('blue', 'Bob'),
+                    new Player('orange', 'Charlie'),
+                    new Player('white', 'Diana')
+                ];
+                
+                let result = '👥 Created players:\n\n';
+                testObjects.players.forEach(player => {
+                    result += `${player.toString()}\n`;
+                    
+                    // Give some resources
+                    player.addResources('lumber', 3);
+                    player.addResources('brick', 2);
+                    player.addResources('wool', 1);
+                    player.addResources('grain', 1);
+                    
+                    result += `  Resources: ${JSON.stringify(player.resources)}\n`;
+                    result += `  Can afford settlement: ${player.canAfford('settlement')}\n`;
+                    result += `  Can afford city: ${player.canAfford('city')}\n\n`;
+                });
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function testGamePieces() {
+            const output = document.getElementById('pieces-output');
+            try {
+                if (testObjects.players.length === 0) {
+                    throw new Error('Please create players first');
+                }
+                
+                const player1 = testObjects.players[0];
+                const player2 = testObjects.players[1];
+                
+                // Create vertices and edges for testing
+                testObjects.vertices = [
+                    new Vertex(0, 0, 0),
+                    new Vertex(0, 0, 1),
+                    new Vertex(1, 0, 0)
+                ];
+                
+                testObjects.edges = [
+                    new Edge(0, 0, 0),
+                    new Edge(0, 0, 1)
+                ];
+                
+                // Create game pieces
+                const settlement1 = new Settlement(player1);
+                const settlement2 = new Settlement(player2);
+                const road1 = new Road(player1);
+                const robber = new Robber();
+                
+                testObjects.pieces = [settlement1, settlement2, road1, robber];
+                
+                let result = '🏠 Created game pieces:\n\n';
+                
+                // Test settlement placement
+                if (settlement1.placeOn(testObjects.vertices[0])) {
+                    result += `✅ ${settlement1.toString()} placed successfully\n`;
+                } else {
+                    result += `❌ Failed to place ${settlement1.toString()}\n`;
+                }
+                
+                // Test road placement  
+                if (road1.placeOn(testObjects.edges[0])) {
+                    result += `✅ ${road1.toString()} placed successfully\n`;
+                } else {
+                    result += `❌ Failed to place ${road1.toString()}\n`;
+                }
+                
+                // Test robber placement
+                if (testObjects.hexes.length > 0) {
+                    robber.moveTo(testObjects.hexes[0]);
+                    result += `✅ ${robber.toString()} placed successfully\n`;
+                }
+                
+                result += '\n🎯 Piece details:\n';
+                testObjects.pieces.forEach(piece => {
+                    result += `  ${piece.toString()}\n`;
+                });
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function inspectObjects() {
+            const output = document.getElementById('inspector-output');
+            try {
+                let inspection = '🔍 COMPLETE OBJECT INSPECTION\n';
+                inspection += '='.repeat(50) + '\n\n';
+                
+                // Inspect all object types
+                Object.entries(testObjects).forEach(([type, objects]) => {
+                    if (objects.length > 0) {
+                        inspection += `📋 ${type.toUpperCase()}:\n`;
+                        inspection += '-'.repeat(30) + '\n';
+                        
+                        objects.forEach((obj, index) => {
+                            inspection += `[${index}] ${obj.constructor.name}:\n`;
+                            if (obj.getDebugInfo) {
+                                inspection += JSON.stringify(obj.getDebugInfo(), null, 2) + '\n\n';
+                            } else {
+                                inspection += `  ${obj.toString()}\n\n`;
+                            }
+                        });
+                        inspection += '\n';
+                    }
+                });
+                
+                // Add global inspection functions to window for console use
+                window.inspectHex = (index) => console.log(testObjects.hexes[index]?.getDebugInfo());
+                window.inspectPlayer = (index) => console.log(testObjects.players[index]?.getDebugInfo());
+                window.inspectToken = (index) => console.log(testObjects.tokens[index]?.getDebugInfo());
+                
+                inspection += '\n🛠️  CONSOLE HELPERS:\n';
+                inspection += 'Use these in browser console:\n';
+                inspection += '• inspectHex(0) - Inspect first hex\n';
+                inspection += '• inspectPlayer(0) - Inspect first player\n';
+                inspection += '• inspectToken(0) - Inspect first token\n';
+                inspection += '• testObjects - Access all test objects\n';
+                
+                output.textContent = inspection;
+            } catch (error) {
+                output.textContent = `❌ Error: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        // Make testObjects globally accessible for console debugging
+        window.testObjects = testObjects;
+        
+        // Auto-load on page load
+        window.addEventListener('load', loadCoreObjects);
+    </script>
+</body>
+</html>
