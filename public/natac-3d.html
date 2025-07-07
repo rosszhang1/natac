@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natac - 3D Catan Game</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #1a1a1a; 
+            color: white; 
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #game-canvas { 
+            width: 100vw; 
+            height: 100vh; 
+            display: block;
+            cursor: pointer;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .game-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            pointer-events: all;
+            min-width: 200px;
+        }
+        
+        .game-hud h2 {
+            margin: 0 0 10px 0;
+            color: #ffd700;
+            font-size: 18px;
+        }
+        
+        .player-info {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        
+        .current-player {
+            border: 2px solid #4CAF50;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            pointer-events: all;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .dice-result {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            pointer-events: all;
+            text-align: center;
+        }
+        
+        .dice-display {
+            font-size: 48px;
+            margin: 10px 0;
+        }
+        
+        .stats {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            pointer-events: all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .event-log {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            max-height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            pointer-events: all;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        
+        .event-log .event {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 24px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game-canvas"></canvas>
+    
+    <div id="loading" class="loading">
+        <h1>🎲 Loading Natac...</h1>
+        <p>Initializing 3D Catan experience</p>
+    </div>
+    
+    <div id="ui-overlay" class="ui-overlay hidden">
+        <!-- Game HUD -->
+        <div class="game-hud">
+            <h2>🎮 Natac</h2>
+            <div id="game-phase">Phase: Loading...</div>
+            <div id="turn-info">Turn: -</div>
+            
+            <div id="players-list">
+                <!-- Players will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Dice Result -->
+        <div id="dice-result" class="dice-result hidden">
+            <h3>🎲 Dice Roll</h3>
+            <div class="dice-display" id="dice-display">-</div>
+            <div id="dice-breakdown">- + -</div>
+        </div>
+        
+        <!-- Performance Stats -->
+        <div class="stats">
+            <h4>📊 Performance</h4>
+            <div id="fps">FPS: -</div>
+            <div id="render-stats">Meshes: -</div>
+            <div id="draw-calls">Draw Calls: -</div>
+        </div>
+        
+        <!-- Event Log -->
+        <div class="event-log">
+            <h4>📝 Game Events</h4>
+            <div id="events-container">
+                <!-- Events will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button id="start-game">Start Game</button>
+            <button id="roll-dice" disabled>Roll Dice</button>
+            <button id="end-turn" disabled>End Turn</button>
+            <button id="reset-camera">Reset Camera</button>
+            <button id="new-game">New Game</button>
+        </div>
+    </div>
+
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Load Core Game Engine -->
+    <script src="js/core/Hex.js"></script>
+    <script src="js/core/Vertex.js"></script>
+    <script src="js/core/Edge.js"></script>
+    <script src="js/core/NumberToken.js"></script>
+    <script src="js/core/GamePieces.js"></script>
+    <script src="js/core/Player.js"></script>
+    <script src="js/core/Board.js"></script>
+    <script src="js/core/Game.js"></script>
+    
+    <!-- Load 3D Renderer -->
+    <script src="js/rendering/Renderer3D.js"></script>
+    <script src="js/rendering/GameRenderer.js"></script>
+
+    <script>
+        // Global game objects
+        let game = null;
+        let gameRenderer = null;
+        
+        // UI elements
+        const loadingEl = document.getElementById('loading');
+        const uiOverlayEl = document.getElementById('ui-overlay');
+        const gamePhaseEl = document.getElementById('game-phase');
+        const turnInfoEl = document.getElementById('turn-info');
+        const playersListEl = document.getElementById('players-list');
+        const diceResultEl = document.getElementById('dice-result');
+        const diceDisplayEl = document.getElementById('dice-display');
+        const diceBreakdownEl = document.getElementById('dice-breakdown');
+        const eventsContainerEl = document.getElementById('events-container');
+        
+        // Control buttons
+        const startGameBtn = document.getElementById('start-game');
+        const rollDiceBtn = document.getElementById('roll-dice');
+        const endTurnBtn = document.getElementById('end-turn');
+        const resetCameraBtn = document.getElementById('reset-camera');
+        const newGameBtn = document.getElementById('new-game');
+        
+        // Initialize the game
+        async function initGame() {
+            try {
+                // Create game
+                game = new Game();
+                
+                // Add test players
+                game.addPlayer('red', 'Alice');
+                game.addPlayer('blue', 'Bob');
+                game.addPlayer('orange', 'Charlie');
+                game.addPlayer('white', 'Diana');
+                
+                // Initialize 3D renderer
+                const canvas = document.getElementById('game-canvas');
+                gameRenderer = new GameRenderer(canvas);
+                gameRenderer.init();
+                gameRenderer.connectToGame(game);
+                
+                // Setup UI
+                setupEventListeners();
+                updateUI();
+                
+                // Hide loading, show UI
+                loadingEl.classList.add('hidden');
+                uiOverlayEl.classList.remove('hidden');
+                
+                console.log('🎮 Natac initialized successfully!');
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize game:', error);
+                loadingEl.innerHTML = `<h1>❌ Error</h1><p>${error.message}</p>`;
+            }
+        }
+        
+        function setupEventListeners() {
+            startGameBtn.addEventListener('click', startGame);
+            rollDiceBtn.addEventListener('click', rollDice);
+            endTurnBtn.addEventListener('click', endTurn);
+            resetCameraBtn.addEventListener('click', () => gameRenderer.resetCamera());
+            newGameBtn.addEventListener('click', createNewGame);
+            
+            // Update UI periodically
+            setInterval(updatePerformanceStats, 1000);
+        }
+        
+        function startGame() {
+            const started = game.startGame();
+            if (started) {
+                gameRenderer.renderGame();
+                updateUI();
+                startGameBtn.disabled = true;
+            }
+        }
+        
+        function rollDice() {
+            const result = game.rollDice();
+            if (result) {
+                showDiceResult(result);
+                updateUI();
+            }
+        }
+        
+        function endTurn() {
+            game.endTurn();
+            hideDiceResult();
+            updateUI();
+        }
+        
+        function createNewGame() {
+            // Reset everything
+            game = new Game();
+            game.addPlayer('red', 'Alice');
+            game.addPlayer('blue', 'Bob');
+            game.addPlayer('orange', 'Charlie');
+            game.addPlayer('white', 'Diana');
+            
+            gameRenderer.connectToGame(game);
+            gameRenderer.renderer3d.clearBoard();
+            
+            startGameBtn.disabled = false;
+            updateUI();
+        }
+        
+        function showDiceResult(result) {
+            diceDisplayEl.textContent = result.total;
+            diceBreakdownEl.textContent = `${result.die1} + ${result.die2}`;
+            diceResultEl.classList.remove('hidden');
+        }
+        
+        function hideDiceResult() {
+            diceResultEl.classList.add('hidden');
+        }
+        
+        function updateUI() {
+            // Update game phase
+            const state = game.getGameState();
+            gamePhaseEl.textContent = `Phase: ${state.phase}`;
+            turnInfoEl.textContent = `Turn: ${state.turnNumber} | Player: ${state.currentPlayer || 'None'}`;
+            
+            // Update player list
+            playersListEl.innerHTML = '';
+            game.players.forEach((player, index) => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player-info';
+                if (player === game.getCurrentPlayer()) {
+                    playerDiv.classList.add('current-player');
+                }
+                
+                playerDiv.innerHTML = `
+                    <div style="color: ${getPlayerColorHex(player.color)}">${player.name}</div>
+                    <div>VP: ${player.victoryPoints} | Resources: ${player.getTotalResources()}</div>
+                `;
+                playersListEl.appendChild(playerDiv);
+            });
+            
+            // Update button states
+            rollDiceBtn.disabled = state.phase !== 'playing' || state.hasRolledDice;
+            endTurnBtn.disabled = state.phase !== 'playing' || !state.hasRolledDice;
+            
+            // Update events
+            updateEventLog();
+        }
+        
+        function updateEventLog() {
+            const recentEvents = game.eventLog.slice(-10).reverse();
+            eventsContainerEl.innerHTML = '';
+            
+            recentEvents.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event';
+                eventDiv.textContent = event.message;
+                eventsContainerEl.appendChild(eventDiv);
+            });
+        }
+        
+        function updatePerformanceStats() {
+            if (!gameRenderer) return;
+            
+            const stats = gameRenderer.getStats();
+            document.getElementById('fps').textContent = `FPS: ${stats.renderer.fps}`;
+            document.getElementById('render-stats').textContent = `Meshes: ${stats.renderer.meshes}`;
+            document.getElementById('draw-calls').textContent = `Draw Calls: ${stats.renderer.calls}`;
+        }
+        
+        function getPlayerColorHex(color) {
+            const colors = {
+                red: '#ff0000',
+                blue: '#0000ff', 
+                orange: '#ffa500',
+                white: '#ffffff'
+            };
+            return colors[color] || '#ffffff';
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', initGame);
+        
+        // Make game objects globally accessible for debugging
+        window.game = game;
+        window.gameRenderer = gameRenderer;
+        
+        // Handle game object clicks
+        window.addEventListener('gameObjectClick', (event) => {
+            console.log('🖱️ Game object clicked:', event.detail);
+            updateUI(); // Refresh UI after any game changes
+        });
+        
+        console.log('🚀 Natac 3D starting...');
+    </script>
+</body>
+</html>

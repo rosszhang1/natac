@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natac - Core Game Test</title>
+    <style>
+        body { font-family: 'Courier New', monospace; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-section h2 { color: #2c5f2d; border-bottom: 2px solid #2c5f2d; padding-bottom: 10px; }
+        .debug-output { background: #f8f8f8; padding: 15px; border-left: 4px solid #4CAF50; margin: 10px 0; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .error { border-left-color: #f44336; background: #fff5f5; }
+        .success { border-left-color: #4CAF50; background: #f0fff0; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #45a049; }
+        .game-controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Natac - Core Game Engine Test</h1>
+        <p>Testing the complete game engine: Board + Game + Players + Rules</p>
+        
+        <div class="test-section">
+            <h2>🎲 Game Setup</h2>
+            <div class="game-controls">
+                <button onclick="createGame()">Create New Game</button>
+                <button onclick="addTestPlayers()">Add 4 Players</button>
+                <button onclick="startGame()">Start Game</button>
+            </div>
+            <div id="setup-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🏗️ Board Generation</h2>
+            <div class="game-controls">
+                <button onclick="inspectBoard()">Inspect Board</button>
+                <button onclick="showHexDetails()">Show Hex Details</button>
+                <button onclick="showRelationships()">Show Relationships</button>
+            </div>
+            <div id="board-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🏠 Setup Phase</h2>
+            <div class="game-controls">
+                <button onclick="placeSetupPieces()">Auto-Place Setup Pieces</button>
+                <button onclick="showValidPlacements()">Show Valid Placements</button>
+                <button onclick="finishSetup()">Complete Setup</button>
+            </div>
+            <div id="setup-phase-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎯 Gameplay</h2>
+            <div class="game-controls">
+                <button onclick="rollDice()">Roll Dice</button>
+                <button onclick="simulateTurns()">Simulate 5 Turns</button>
+                <button onclick="showGameState()">Show Game State</button>
+            </div>
+            <div id="gameplay-output" class="debug-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 Live Inspector</h2>
+            <div class="game-controls">
+                <button onclick="inspectAll()">Inspect Everything</button>
+                <button onclick="showEventLog()">Show Event Log</button>
+            </div>
+            <div id="inspector-output" class="debug-output"></div>
+        </div>
+    </div>
+
+    <!-- Load all core modules -->
+    <script src="js/core/Hex.js"></script>
+    <script src="js/core/Vertex.js"></script>
+    <script src="js/core/Edge.js"></script>
+    <script src="js/core/NumberToken.js"></script>
+    <script src="js/core/GamePieces.js"></script>
+    <script src="js/core/Player.js"></script>
+    <script src="js/core/Board.js"></script>
+    <script src="js/core/Game.js"></script>
+
+    <script>
+        // Global game instance
+        let game = null;
+
+        function createGame() {
+            const output = document.getElementById('setup-output');
+            try {
+                game = new Game();
+                output.textContent = '✅ Game created successfully!\n\n' + game.toString();
+                output.className = 'debug-output success';
+                
+                // Make game globally accessible for console debugging
+                window.game = game;
+            } catch (error) {
+                output.textContent = `❌ Error creating game: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function addTestPlayers() {
+            const output = document.getElementById('setup-output');
+            if (!game) {
+                output.textContent = '❌ Create game first!';
+                return;
+            }
+            
+            try {
+                const players = [
+                    game.addPlayer('red', 'Alice'),
+                    game.addPlayer('blue', 'Bob'), 
+                    game.addPlayer('orange', 'Charlie'),
+                    game.addPlayer('white', 'Diana')
+                ];
+                
+                let result = '👥 Players added:\n\n';
+                players.forEach(player => {
+                    if (player) {
+                        result += `${player.toString()}\n`;
+                    }
+                });
+                
+                result += `\nGame can start: ${game.players.length >= 2}`;
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error adding players: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function startGame() {
+            const output = document.getElementById('setup-output');
+            if (!game) {
+                output.textContent = '❌ Create game first!';
+                return;
+            }
+            
+            try {
+                const started = game.startGame();
+                if (started) {
+                    output.textContent = '🎮 Game started!\n\n' + 
+                                       `Phase: ${game.gamePhase}\n` +
+                                       `Current Player: ${game.getCurrentPlayer().name}\n` +
+                                       `Board Generated: ${game.board.isGenerated}\n\n` +
+                                       game.board.toString();
+                    output.className = 'debug-output success';
+                } else {
+                    output.textContent = '❌ Cannot start game (need at least 2 players)';
+                    output.className = 'debug-output error';
+                }
+            } catch (error) {
+                output.textContent = `❌ Error starting game: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function inspectBoard() {
+            const output = document.getElementById('board-output');
+            if (!game || !game.board.isGenerated) {
+                output.textContent = '❌ Start game first to generate board!';
+                return;
+            }
+            
+            try {
+                const boardInfo = game.board.getDebugInfo();
+                let result = '🗺️ BOARD INSPECTION:\n';
+                result += '='.repeat(40) + '\n\n';
+                
+                result += `📊 Stats: ${JSON.stringify(boardInfo.stats, null, 2)}\n\n`;
+                result += `🏔️ Terrain: ${JSON.stringify(boardInfo.terrainDistribution, null, 2)}\n\n`;
+                result += `🔢 Tokens: [${boardInfo.numberTokens.join(', ')}]\n\n`;
+                result += `🤖 Robber: ${boardInfo.robberLocation}\n\n`;
+                
+                result += '📋 Sample Elements:\n';
+                result += `Hexes: ${boardInfo.sampleHexes.join(', ')}\n`;
+                result += `Vertices: ${boardInfo.sampleVertices.join(', ')}\n`;
+                result += `Edges: ${boardInfo.sampleEdges.join(', ')}\n`;
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error inspecting board: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function showHexDetails() {
+            const output = document.getElementById('board-output');
+            if (!game || !game.board.isGenerated) {
+                output.textContent = '❌ Start game first to generate board!';
+                return;
+            }
+            
+            try {
+                let result = '🏔️ HEX DETAILS:\n';
+                result += '='.repeat(40) + '\n\n';
+                
+                Array.from(game.board.hexes.values()).forEach(hex => {
+                    const pos = hex.toPixelCoordinates(1);
+                    result += `${hex.toString()}\n`;
+                    result += `  Position: (${pos.x.toFixed(1)}, ${pos.z.toFixed(1)})\n`;
+                    result += `  Neighbors: ${hex.neighbors.length}\n`;
+                    result += `  Vertices: ${hex.vertices.length}\n`;
+                    result += `  Edges: ${hex.edges.length}\n`;
+                    if (hex.numberToken) {
+                        result += `  Token: ${hex.numberToken.value} (${hex.numberToken.getProbabilityPercent()}%)\n`;
+                    }
+                    result += '\n';
+                });
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error showing hex details: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function showRelationships() {
+            const output = document.getElementById('board-output');
+            if (!game || !game.board.isGenerated) {
+                output.textContent = '❌ Start game first to generate board!';
+                return;
+            }
+            
+            try {
+                let result = '🔗 RELATIONSHIP VERIFICATION:\n';
+                result += '='.repeat(40) + '\n\n';
+                
+                // Check a few hexes for proper relationships
+                const hexes = Array.from(game.board.hexes.values()).slice(0, 3);
+                
+                hexes.forEach(hex => {
+                    result += `🏔️ ${hex.toString()}:\n`;
+                    result += `  Neighbors: ${hex.neighbors.map(h => `(${h.q},${h.r})`).join(', ')}\n`;
+                    result += `  Vertices: ${hex.vertices.length} [${hex.vertices.map(v => v.direction).join(', ')}]\n`;
+                    result += `  Edges: ${hex.edges.length}\n`;
+                    
+                    // Check vertex relationships
+                    hex.vertices.forEach((vertex, i) => {
+                        result += `    V${i}: ${vertex.hexes.length} hexes, ${vertex.edges.length} edges\n`;
+                    });
+                    result += '\n';
+                });
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error showing relationships: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function showValidPlacements() {
+            const output = document.getElementById('setup-phase-output');
+            if (!game || game.gamePhase !== 'setup') {
+                output.textContent = '❌ Game must be in setup phase!';
+                return;
+            }
+            
+            try {
+                const validSettlements = game.board.getValidSettlementPlacements();
+                const currentPlayer = game.getCurrentPlayer();
+                const validRoads = game.board.getValidRoadPlacements(currentPlayer);
+                
+                let result = `🎯 VALID PLACEMENTS for ${currentPlayer.name}:\n`;
+                result += '='.repeat(40) + '\n\n';
+                
+                result += `🏠 Settlement locations: ${validSettlements.length}\n`;
+                validSettlements.slice(0, 5).forEach(vertex => {
+                    result += `  ${vertex.toString()}\n`;
+                });
+                if (validSettlements.length > 5) {
+                    result += `  ... and ${validSettlements.length - 5} more\n`;
+                }
+                
+                result += `\n🛤️ Road locations: ${validRoads.length}\n`;
+                validRoads.slice(0, 5).forEach(edge => {
+                    result += `  ${edge.toString()}\n`;
+                });
+                if (validRoads.length > 5) {
+                    result += `  ... and ${validRoads.length - 5} more\n`;
+                }
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error showing placements: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function placeSetupPieces() {
+            const output = document.getElementById('setup-phase-output');
+            if (!game || game.gamePhase !== 'setup') {
+                output.textContent = '❌ Game must be in setup phase!';
+                return;
+            }
+            
+            try {
+                const currentPlayer = game.getCurrentPlayer();
+                const validSettlements = game.board.getValidSettlementPlacements();
+                const validRoads = game.board.getValidRoadPlacements(currentPlayer);
+                
+                // Place settlement
+                if (validSettlements.length > 0) {
+                    const vertex = validSettlements[0];
+                    const settlement = game.placeSettlement(vertex);
+                    
+                    if (settlement) {
+                        // Place road adjacent to settlement
+                        const adjacentRoads = vertex.edges.filter(edge => edge.canPlaceRoad(currentPlayer));
+                        if (adjacentRoads.length > 0) {
+                            const road = game.placeRoad(adjacentRoads[0]);
+                            if (road) {
+                                output.textContent = `✅ Placed settlement and road for ${currentPlayer.name}\n\n` +
+                                                   `Settlement: ${settlement.toString()}\n` +
+                                                   `Road: ${road.toString()}\n\n` +
+                                                   `Phase: ${game.gamePhase}\n` +
+                                                   `Setup Round: ${game.setupRound}\n` +
+                                                   `Next Player: ${game.getCurrentPlayer().name}`;
+                                output.className = 'debug-output success';
+                            }
+                        }
+                    }
+                } else {
+                    output.textContent = '❌ No valid settlement locations';
+                    output.className = 'debug-output error';
+                }
+            } catch (error) {
+                output.textContent = `❌ Error placing pieces: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function rollDice() {
+            const output = document.getElementById('gameplay-output');
+            if (!game || game.gamePhase !== 'playing') {
+                output.textContent = '❌ Game must be in playing phase!';
+                return;
+            }
+            
+            try {
+                const result = game.rollDice();
+                if (result) {
+                    let outputText = `🎲 DICE ROLL: ${result.total} (${result.die1} + ${result.die2})\n\n`;
+                    outputText += `Current Player: ${game.getCurrentPlayer().name}\n`;
+                    outputText += `Can Build: ${game.canBuild}\n`;
+                    outputText += `Can Trade: ${game.canTrade}\n\n`;
+                    
+                    // Show recent events
+                    const recentEvents = game.eventLog.slice(-3).map(e => e.message);
+                    outputText += `Recent Events:\n${recentEvents.join('\n')}`;
+                    
+                    output.textContent = outputText;
+                    output.className = 'debug-output success';
+                } else {
+                    output.textContent = '❌ Cannot roll dice (already rolled this turn)';
+                    output.className = 'debug-output error';
+                }
+            } catch (error) {
+                output.textContent = `❌ Error rolling dice: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function showGameState() {
+            const output = document.getElementById('gameplay-output');
+            if (!game) {
+                output.textContent = '❌ Create game first!';
+                return;
+            }
+            
+            try {
+                const state = game.getDebugInfo();
+                let result = '🎮 GAME STATE:\n';
+                result += '='.repeat(40) + '\n\n';
+                
+                result += `📊 ${JSON.stringify(state.gameState, null, 2)}\n\n`;
+                result += `👥 Players:\n`;
+                state.players.forEach(player => {
+                    result += `  ${player.name} (${player.color}): ${player.victoryPoints} VP, ${player.resources} resources\n`;
+                });
+                
+                result += `\n📝 Recent Events:\n`;
+                state.recentEvents.forEach(event => {
+                    result += `  ${event}\n`;
+                });
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error showing game state: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        function inspectAll() {
+            const output = document.getElementById('inspector-output');
+            if (!game) {
+                output.textContent = '❌ Create game first!';
+                return;
+            }
+            
+            try {
+                let result = '🔍 COMPLETE GAME INSPECTION:\n';
+                result += '='.repeat(50) + '\n\n';
+                
+                result += `🎮 Game: ${game.toString()}\n`;
+                result += `🗺️ Board: ${game.board.toString()}\n`;
+                result += `👥 Players: ${game.players.map(p => p.toString()).join(', ')}\n\n`;
+                
+                if (game.board.isGenerated) {
+                    result += `📊 Board Stats: ${JSON.stringify(game.board.getStats())}\n\n`;
+                }
+                
+                result += `🎯 Game State: ${JSON.stringify(game.getGameState(), null, 2)}\n\n`;
+                
+                // Add console helpers
+                result += '🛠️ CONSOLE HELPERS:\n';
+                result += 'window.game - Main game object\n';
+                result += 'game.board.hexes - All hexes\n';
+                result += 'game.board.vertices - All vertices\n';
+                result += 'game.board.edges - All edges\n';
+                result += 'game.players - All players\n';
+                
+                output.textContent = result;
+                output.className = 'debug-output success';
+            } catch (error) {
+                output.textContent = `❌ Error inspecting: ${error.message}`;
+                output.className = 'debug-output error';
+            }
+        }
+
+        // Auto-create game on page load
+        window.addEventListener('load', createGame);
+    </script>
+</body>
+</html>
